@@ -1,10 +1,13 @@
 # MiniGS
 A tiny grooveshark-style music site for personal use. You need to load your own music.
 
+![screenshot](http://i.imgur.com/Eny6fI1.png)
+
 # Features
 - Basic search
 - Automatic file reencoding
 - Read tracks in cue sheets
+- It's tiny - currently less than 600 lines of code and zero graphics
 
 # Requirements
 - LAMP server
