@@ -73,7 +73,7 @@ if($stmt->fetch()){
 
 		if(!file_exists($outfile)){
 			if(!isset($_GET["prepare"])){
-				echo shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' && rm ' . escapeshellarg($lockfile));
+				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' && rm ' . escapeshellarg($lockfile));
 			}else{
 				pclose(popen('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' && rm ' . escapeshellarg($lockfile) . ' &', 'r'));
 			}
@@ -101,6 +101,7 @@ if($stmt->fetch()){
 
 		header('Content-type: ' . $mime_type);
 		header('Content-length: ' . $range_length);
+		header('Content-disposition: inline; filename="' . str_replace('"', '\\"', str_replace('\\', '\\\\', basename($filepath))) . '"');
 		header('Accept-Ranges: bytes');
 		header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', time() + (10 * 24 * 60 * 60))); //cache for 10 days
 
