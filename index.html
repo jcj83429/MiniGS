@@ -147,7 +147,7 @@ search = function(){
 prepareNextTrack = function(force){
   var new_next_id = $(current_track.next()).attr("track_id")
   if(!new_next_id){
-    if(playlist.getElementsByTagName('li')[0]){
+    if(playlist.childElementCount == 1 && !current_track.attr("track_id")){ //first track, not playing
       new_next_id = playlist.getElementsByTagName('li')[0].getAttribute('track_id')
     }else{
       return
@@ -156,7 +156,7 @@ prepareNextTrack = function(force){
   if(force || new_next_id != next_id){
     next_id = new_next_id
     $.get("gettrack.php?prepare=1&id=" + next_id + "&format=" + format)
-    console.log( "asking server to prepare " + next_id)
+    console.log( "asking server to prepare " + next_id + " " + format)
   }
 }
 

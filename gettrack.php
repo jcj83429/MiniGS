@@ -14,7 +14,7 @@ if(isset($_GET["format"])){
 			$fmt_ext = '.mp3';
 			$suffix = ".320k.mp3";
 			$mime_type = "audio/mpeg";
-			$quality_params = " -b:a 320k ";
+			$quality_params = " -b:a 320k -vn ";
 			break;
 		case "ogg":
 			$fmt_ext = '.ogg';
@@ -26,7 +26,7 @@ if(isset($_GET["format"])){
 			$fmt_ext = '.opus';
 			$suffix = ".256k.opus";
 			$mime_type = "audio/ogg";
-			$quality_params = " -b:a 256k ";
+			$quality_params = " -b:a 256k -vn ";
 			break;
 		default:
 			die("invalid");
