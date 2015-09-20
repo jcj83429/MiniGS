@@ -1,224 +1,229 @@
 <html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<script src="jquery.js"></script>
-<script src="jquery-ui.js"></script>
-<script src="sprintf.js"></script>
-<script src="sorttable.js"></script>
-<script src="jquery.ui.touch-punch.js"></script>
-  <style>
-  #playlist {
-    width: 400px;
-    min-height: 95%;
-    list-style-type: none;
-    margin: 0;
-    padding: 5px 0 0 0;
-    float: left;
-  }
-  #playlist li{
-    margin: 0px 15px 5px 5px;
-    padding: 5px;
-	height: 40px;
-	color: #ffffff;
-	background-color: #444444;
-	position:relative;
-  }
-  #playlist a{
-    color: #ffffff;
-  }
-  #playlist .playing{
-    color: #000000;
-    background-color: #ffaa55;
-  }
-  #playlist .playing a{
-    color: #000000;
-  }
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<script src="jquery.js"></script>
+		<script src="jquery-ui.js"></script>
+		<script src="sprintf.js"></script>
+		<script src="sorttable.js"></script>
+		<script src="jquery.ui.touch-punch.js"></script>
+		<style>
+			#playlist {
+			width: 400px;
+			min-height: 95%;
+			list-style-type: none;
+			margin: 0;
+			padding: 5px 0 0 0;
+			float: left;
+			}
+			#playlist li{
+			margin: 0px 15px 5px 5px;
+			padding: 5px;
+			height: 40px;
+			color: #ffffff;
+			background-color: #444444;
+			position:relative;
+			}
+			#playlist a{
+			color: #ffffff;
+			}
+			#playlist .playing{
+			color: #000000;
+			background-color: #ffaa55;
+			}
+			#playlist .playing a{
+			color: #000000;
+			}
+			table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after { 
+			content: " \25B4\25BE" 
+			}
+		</style>
+	</head>
+	<body>
+		<div id="everything" style='position:absolute;top:0px;bottom:0px;left:0px;right:0px;'>
+			<div id="top" style='width:100%;'>
+				<div id="header" style='float:left;position:absolute;top:0px;width:400px;height:30px;background-color:#666666;'>
+					<div style='float:right;padding:5px;'>
+						Audio Format:
+						<select id="audio-format" onchange="change_format();">
+							<option value="mp3">mp3</option>
+							<option value="ogg">ogg</option>
+							<option value="opus">opus</option>
+						</select>
+					</div>
+					<div style='position:absolute;top:0px;left:0px;font-size:125%;color:#ff8800;'>Mini Grooveshark <sup>ALPHA</sup></div>
+				</div>
+				<div id="playlist-container" style='float:left;position:absolute;top:30px;bottom:50px;width:400px;overflow-y:auto;overflow-x:hidden;background-color:#888888;'>
+					<ul id="playlist"></ul>
+				</div>
+				<div id="browse" style='position:absolute;left:420px;top:0px;bottom:50px;right:0px;overflow-y:auto;'>
+					<input type="text" id="searchbox" onkeydown="if (event.keyCode == 13) search();" placeholder="artist, album, title (empty = list all tracks)" size=40>
+					<input type="button" value="Search" onclick="search();">
+					<table border=1 id="result-table" class="sortable"></table>
+					<div id="result-text"></div>
+					<h3>FAQ</h3>
+					<dl>
+						<dt>How does this work?</dt>
+						<dd>
+							<ol style='padding-left:0;'>
+								<li>Use the search box to search the music collection or leave the search box blank to list all tracks.</li>
+								<li>Click the + button on the tracks in the search results to add it to the playlist on the left</li>
+								<li>Click a playlist entry to play it. Drag the items up/down to reorder the playlist.</li>
+							</ol>
+						</dd>
+						<dt>Why does it take a long time for a track to start playing?</dt>
+						<dd>If the audio file on the server is different from the preferred audio format, then the track needs to be converted before it is served. The player automatically ask the server to prepare the next track when a track start playing so there should be no delay if you let the tracks play one by one. If you jump ahead on the playlist, the track may not be ready and you will need to wait for the compression to finish.</dd>
+						<dt>The search is weird. The more words I enter the more results I get</dt>
+						<dd>The search uses <a href="https://dev.mysql.com/doc/refman/5.0/en/fulltext-boolean.html">MySQL fulltext search boolean mode</a>. <br> <b>TL;DR: To make sure all results contain the word, add a + in front of the word.</b></dd>
+						<dt>Why no separate searches for artist, album and title?</dt>
+						<dd>Many files are poorly tagged so separate seraches would be unreliable</dd>
+						<dt>Mobile Support?</dt>
+						<dd>On touch-enabled devices, a &equiv; will show up on playlist items. Touch the &equiv; and move to drag the playlist items. Touch elsewhere on the playlist to scroll.</dd>
+					</dl>
+				</div>
+			</div>
+			<div id="bottom" style='position:absolute;bottom:0px;left:0px;right:0px;height:50px;background-color:#666666;'>
+				<table style='width:100%;height:100%'>
+					<tr>
+						<td valign='bottom'>
+							<audio controls style='width:100%;' id="player"></audio>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<script type="text/javascript">
+			var player = document.getElementById("player")
+			var playlist = document.getElementById("playlist")
+			var current_track = $(".playing")
+			var next_id = null //used to determine of the next track has changed. if it has, then make another prepare request
+			var format = "mp3"
+			var playtrack_enable = true
+			
+			playtrack = function(track) {
+				if (!playtrack_enable)
+					return;
+				if (current_track)
+					current_track.removeClass("playing")
+				current_track = $(track)
+				current_track.addClass("playing")
+				player.src = "gettrack.php?id=" + $(track).attr("track_id") + "&format=" + format
+				player.play()
+				console.log("play " + $(track).attr("track_id"));
+				prepareNextTrack()
+			}
 
-  table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after { 
-    content: " \25B4\25BE" 
-  }
-  </style>
-</head>
-<body>
-<div id="everything" style='height:100%;width:100%;'>
-<div id="top" style='width:100%;'>
-<div id="header" style='float:left;position:absolute;top:0px;width:400px;height:30px;background-color:#666666;'>
-  <div style='float:right;padding:5px;'>Audio Format:
-    <select id="audio-format" onchange="change_format();">
-      <option value="mp3">mp3</option>
-      <option value="ogg">ogg</option>
-      <option value="opus">opus</option>
-    </select>
-  </div>
-  <div style='position:absolute;top:0px;left:0px;font-size:125%;color:#ff8800;'>Mini Grooveshark <sup>ALPHA</sup></div>
-</div>
-<div id="playlist-container" style='float:left;position:absolute;top:30px;bottom:50px;width:400px;overflow-y:auto;overflow-x:hidden;background-color:#888888;'>
-<ul id="playlist">
-</ul>
-</div>
-<div id="browse" style='position:absolute;left:420px;top:0px;bottom:50px;right:0px;overflow-y:auto;'>
-  <input type="text" id="searchbox" onkeydown="if (event.keyCode == 13) search();" placeholder="artist, album, title (empty = list all tracks)" size=40>
-  <input type="button" value="Search" onclick="search();">
-  <table border=1 id="result-table" class="sortable">
-  </table>
-  <h3>FAQ</h3>
-  <dl>
-    <dt>How does this work?</dt>
-      <dd>
-        <ol style='padding-left:0;'>
-          <li>Use the search box to search the music collection or leave the search box blank to list all tracks.</li>
-          <li>Click the + button on the tracks in the search results to add it to the playlist on the left</li>
-          <li>Click a playlist entry to play it. Drag the items up/down to reorder the playlist.</li>
-        </ol>
-      </dd>
-    <dt>Why does it take a long time for a track to start playing?</dt>
-      <dd>If the audio file on the server is different from the preferred audio format, then the track needs to be converted before it is served. The player automatically ask the server to prepare the next track when a track start playing so there should be no delay if you let the tracks play one by one. If you jump ahead on the playlist, the track may not be ready and you will need to wait for the compression to finish.</dd>
-    <dt>The search is weird. The more words I enter the more results I get</dt>
-      <dd>The search uses <a href="https://dev.mysql.com/doc/refman/5.0/en/fulltext-boolean.html">MySQL fulltext search boolean mode</a>. <br> <b>TL;DR: To make sure all results contain the word, add a + in front of the word.</b></dd>
-    <dt>Why no separate searches for artist, album and title?</dt>
-      <dd>Many files are poorly tagged so separate seraches would be unreliable</dd>
-    <dt>Mobile Support?</dt>
-      <dd>On touch-enabled devices, a &equiv; will show up on playlist items. Touch the &equiv; and move to drag the playlist items. Touch elsewhere on the playlist to scroll.</dd>
-  </dl>
-</div>
-</div>
-<div id="bottom" style='position:absolute;bottom:0px;width:99%;height:50px;background-color:#666666;'>
-<table style='width:100%;height:100%'><tr><td valign='bottom'>
-<audio controls style='width:100%;' id="player">
-</audio>
-</td></tr></table>
-</div>
-</div>
+			stop = function() {
+				current_track.removeClass("playing")
+				current_track = $(".playing")
+				player.src = "http://null"
+			}
+
+			search = function() {
+				var search_text = document.getElementById("searchbox").value
+				var table_heading = "<tr><th></th><th>artist</th><th>album</th><th>#</th><th>title</th></tr>"
+
+				var search_url
+				if (search_text != "") {
+					search_url = "searchtracks.php?q=" + encodeURIComponent(search_text)
+				} else {
+					search_url = "searchtracks.php?a=1"
+				}
+				$.getJSON(search_url, function(data) {
+					var table_contents = table_heading
+					$.each(data, function(key, val) {
+						if (val["artist"] == null) val["artist"] = "NULL"
+						if (val["album"] == null) val["album"] = "NULL"
+						table_contents = table_contents + '<tr id="' + val["id"] + '" artist="' + val["artist"].replace("\"", "''") + '" album="' + val["album"].replace("\"", "''") + '" trackno="' + val["trackno"] + '" title="' + val["title"].replace("\"", "''") + '"><td><input type="button" value="+" onclick="enqueue(this);"></td><td>' + val["artist"] + '</td><td>' + val["album"] + '</td><td>' + sprintf("%02d", val["trackno"]) + '</td><td>' + val["title"] + '</td></tr>'
+					})
+					var result_table = document.getElementById("result-table")
+					result_table.innerHTML = table_contents
+					sorttable.makeSortable(result_table)
+					document.getElementById("result-text").innerHTML = data.length + " results"
+				})
+				console.log("search " + search_text)
+			}
+
+			//check if next track is valid and different from the last prepared track. if yes, send prepare request
+			//should be called everytime playlist is modified
+			prepareNextTrack = function(force) {
+				var new_next_id = $(current_track.next()).attr("track_id")
+				if (!new_next_id) {
+					if (playlist.childElementCount == 1 && !current_track.attr("track_id")) { //first track, not playing
+						new_next_id = playlist.getElementsByTagName('li')[0].getAttribute('track_id')
+					} else {
+						return
+					}
+				}
+				if (force || new_next_id != next_id) {
+					next_id = new_next_id
+					$.get("gettrack.php?prepare=1&id=" + next_id + "&format=" + format)
+					console.log("asking server to prepare " + next_id + " " + format)
+				}
+			}
 
 
-<script type="text/javascript">
-var player = document.getElementById("player")
-var playlist = document.getElementById("playlist")
-var current_track = $(".playing")
-var next_id = null //used to determine of the next track has changed. if it has, then make another prepare request
-var format = "mp3"
-var playtrack_enable = true
-
-playtrack = function(track) {
-  if(!playtrack_enable)
-	return;
-  if(current_track)
-	current_track.removeClass("playing")
-  current_track = $( track )
-  current_track.addClass("playing")
-  player.src = "gettrack.php?id=" + $( track ).attr("track_id") + "&format=" + format
-  player.play()
-  console.log( "play " + $( track ).attr("track_id") );
-  prepareNextTrack()
-}
-
-stop = function(){
-	current_track.removeClass("playing")
-	current_track = $(".playing")
-	player.src = "http://null"
-}
-
-search = function(){
-  var search_text = document.getElementById("searchbox").value
-  var table_heading = "<tr><th></th><th>artist</th><th>album</th><th>#</th><th>title</th></tr>"
-
-  var search_url
-  if(search_text != ""){
-    search_url = "searchtracks.php?q="+encodeURIComponent(search_text)
-  }else{
-    search_url = "searchtracks.php?a=1"
-  }
-  $.getJSON(search_url, function(data){
-    var table_contents = table_heading
-    $.each(data, function(key, val){
-      if(val["artist"] == null) val["artist"] = "NULL"
-      if(val["album"] == null) val["album"] = "NULL"
-      table_contents = table_contents + '<tr id="'+val["id"]+'" artist="'+val["artist"].replace("\"", "''")+'" album="'+val["album"].replace("\"", "''")+'" trackno="'+val["trackno"]+'" title="'+val["title"].replace("\"", "''")+'"><td><input type="button" value="+" onclick="enqueue(this);"></td><td>'+val["artist"]+'</td><td>'+val["album"]+'</td><td>'+sprintf("%02d", val["trackno"])+'</td><td>'+val["title"]+'</td></tr>'
-    })
-    var result_table = document.getElementById("result-table")
-    result_table.innerHTML = table_contents
-    sorttable.makeSortable(result_table)
-  })
-  console.log("search " + search_text)
-}
-
-//check if next track is valid and different from the last prepared track. if yes, send prepare request
-//should be called everytime playlist is modified
-prepareNextTrack = function(force){
-  var new_next_id = $(current_track.next()).attr("track_id")
-  if(!new_next_id){
-    if(playlist.childElementCount == 1 && !current_track.attr("track_id")){ //first track, not playing
-      new_next_id = playlist.getElementsByTagName('li')[0].getAttribute('track_id')
-    }else{
-      return
-    }
-  }
-  if(force || new_next_id != next_id){
-    next_id = new_next_id
-    $.get("gettrack.php?prepare=1&id=" + next_id + "&format=" + format)
-    console.log( "asking server to prepare " + next_id + " " + format)
-  }
-}
-
-
-enqueue = function(e){
-  var mobile_dragger_html = '<div class="touch-punch-enable" style="float:left;width:50px;height:100%;line-height:100%;font-size:200%;text-align:center;">&equiv;</div>'
-  var entry = e.parentNode.parentNode
-  var new_playlist_item = $( '<li class="ui-sortable-handle" track_id="'+entry.attributes["id"].value+'"><div style="float:right;font-size:150%;"><a href="#" onclick="dequeue(this, event);">X</a></div>' + ($.support.touch ? mobile_dragger_html : "") + '<div style="height:40px;overflow:hidden;">' + entry.attributes["artist"].value + '<br>' + entry.attributes["title"].value + '</div></li>' )
-  new_playlist_item.on( "click", function(){playtrack(this);})
-  new_playlist_item.appendTo(playlist)
-  prepareNextTrack()
-}
-
-dequeue = function(e, event){
-  event.stopPropagation()
-  to_remove = e.parentNode.parentNode
-  if(to_remove == current_track.get()[0]){
-    if(!current_track.is(':last-child')){
-      playtrack(current_track.next())
-    }else{
-      stop()
-    }
-  }
-  to_remove.parentNode.removeChild(to_remove)
-}
-
-change_format = function(){
-  format = document.getElementById("audio-format").value
-  localStorage.setItem("format", format)
-  prepareNextTrack(true)
-}
-
-//init playlist
-$(function() {
-    $( "#playlist" ).sortable({
-		start: function( event, ui ){
-			playtrack_enable = false;
-		},
-		stop: function( event, ui ){
-			setTimeout(function(){
-				playtrack_enable = true;
-				prepareNextTrack();
-			}, 10)
-		},
-		axis: "y"
-	}).disableSelection();
-});
-
-$( "#playlist li" ).on( "click", function(){playtrack(this);});
-
-player.onended = function(){
-	if(!current_track.is(':last-child')){
-		playtrack(current_track.next())
-	}else{
-		stop()
-	}
-}
-
-if(localStorage.getItem("format")){
-	format = localStorage.getItem("format")
-}
-document.getElementById("audio-format").value = format
-</script>
-</body>
+			enqueue = function(e) {
+				var mobile_dragger_html = '<div class="touch-punch-enable" style="float:left;width:50px;height:100%;line-height:100%;font-size:200%;text-align:center;">&equiv;</div>'
+				var entry = e.parentNode.parentNode
+				var new_playlist_item = $('<li class="ui-sortable-handle" track_id="' + entry.attributes["id"].value + '"><div style="float:right;font-size:150%;"><a href="#" onclick="dequeue(this, event);">X</a></div>' + ($.support.touch ? mobile_dragger_html : "") + '<div style="height:40px;overflow:hidden;">' + entry.attributes["artist"].value + '<br>' + entry.attributes["title"].value + '</div></li>')
+				new_playlist_item.on("click", function() {
+					playtrack(this);
+				})
+				new_playlist_item.appendTo(playlist)
+				prepareNextTrack()
+			}
+			
+			dequeue = function(e, event){
+				event.stopPropagation()
+				to_remove = e.parentNode.parentNode
+				if(to_remove == current_track.get()[0]){
+					if(!current_track.is(':last-child')){
+						playtrack(current_track.next())
+					}else{
+						stop()
+					}
+				}
+				to_remove.parentNode.removeChild(to_remove)
+			}
+			
+			change_format = function(){
+				format = document.getElementById("audio-format").value
+				localStorage.setItem("format", format)
+				prepareNextTrack(true)
+			}
+			
+			//init playlist
+			$(function() {
+			    $( "#playlist" ).sortable({
+					start: function( event, ui ){
+						playtrack_enable = false;
+					},
+					stop: function( event, ui ){
+						setTimeout(function(){
+							playtrack_enable = true;
+							prepareNextTrack();
+						}, 10)
+					},
+					axis: "y"
+				}).disableSelection();
+			});
+			
+			$( "#playlist li" ).on( "click", function(){playtrack(this);});
+			
+			player.onended = function(){
+				if(!current_track.is(':last-child')){
+					playtrack(current_track.next())
+				}else{
+					stop()
+				}
+			}
+			
+			if(localStorage.getItem("format")){
+				format = localStorage.getItem("format")
+			}
+			document.getElementById("audio-format").value = format
+		</script>
+	</body>
 </html>
+
+
