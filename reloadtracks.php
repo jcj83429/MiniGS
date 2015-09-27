@@ -24,9 +24,13 @@ function read_file_info($file){
 	if($mediainfo_array['title'] === "" || $mediainfo_array['title'] === NULL){
 		$title = basename($file);
 		$title = preg_replace('/(\\.mp3|\\.m4a|\\.ogg|\\.opus|\\.flac|\\.ape|\\.wv|\\.wav|\\.dts)/', '', $title);
-		$title = preg_replace('/_/', ' ', $title);
 		$mediainfo_array['title'] = $title;
 	}
+	// fix underscores. they mess up the fulltext search
+	$mediainfo_array['artist'] = preg_replace('/_/', ' ', $mediainfo_array['artist']);
+	$mediainfo_array['album'] = preg_replace('/_/', ' ', $mediainfo_array['album']);
+	$mediainfo_array['title'] = preg_replace('/_/', ' ', $mediainfo_array['title']);
+
 	$mediainfo_array['filepath'] = $file;
 	return $mediainfo_array;
 }
@@ -118,7 +122,15 @@ function parse_cue($insert_stmt, $chkdupcue_stmt, $file){
 	$currentTrackInfo['end'] = null;
 	$cueInfo[] = $currentTrackInfo;
 
-	// cue file parsing ended. insert all rows now
+	// cue file parsing ended. 
+	// fix underscores. they mess up the fulltext search
+	$albumTitle = preg_replace('/_/', ' ', $albumTitle);
+	foreach($cueInfo as $trackInfo){
+		$trackInfo['PERFORMER'] = preg_replace('/_/', ' ', $trackInfo['PERFORMER']);
+		$trackInfo['TITLE'] = preg_replace('/_/', ' ', $trackInfo['TITLE']);
+	}
+
+	// insert all rows now
 
 	foreach($cueInfo as $trackInfo){
 		if(file_exists($trackInfo['FILE'])){
