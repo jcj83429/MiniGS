@@ -59,13 +59,13 @@ $stmt->bind_result($filepath,$start,$end);
 if($stmt->fetch()){
 	if(!str_ends_with($filepath, $fmt_ext)){
 		$cut_params = '';
-		if($start != null){
+		if($start !== null){
 			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . '.ss' . intval($start) . $suffix;
 			$cut_params = ' -ss ' . $start;
 		}else{
 			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . $suffix;
 		}
-		if($end != null){
+		if($end !== null){
 			$cut_params = $cut_params . ' -to ' . $end;
 		}
 
@@ -73,9 +73,9 @@ if($stmt->fetch()){
 
 		if(!file_exists($outfile)){
 			if(!isset($_GET["prepare"])){
-				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' && rm ' . escapeshellarg($lockfile));
+				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
 			}else{
-				pclose(popen('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' && rm ' . escapeshellarg($lockfile) . ' &', 'r'));
+				pclose(popen('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . ' &', 'r'));
 			}
 		}else if(!isset($_GET["prepare"])){
 			while(file_exists($lockfile)){
