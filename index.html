@@ -210,13 +210,13 @@
 			
 			$( "#playlist li" ).on( "click", function(){playtrack(this);});
 			
-			player.onended = function(){
+			player.addEventListener("ended", function(event){
 				if(!current_track.is(':last-child')){
 					playtrack(current_track.next())
 				}else{
 					stop()
 				}
-			}
+			});
 			
 			if(localStorage.getItem("format")){
 				format = localStorage.getItem("format")
