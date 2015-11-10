@@ -58,6 +58,7 @@ $stmt->bind_result($filepath,$start,$end);
 
 if($stmt->fetch()){
 	if(!str_ends_with($filepath, $fmt_ext)){
+		// handle cue sheet image cutting
 		$cut_params = '';
 		if($start !== null){
 			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . '.ss' . intval($start) . $suffix;
@@ -69,6 +70,19 @@ if($stmt->fetch()){
 			$cut_params = $cut_params . ' -to ' . $end;
 		}
 
+		// no high res or surround audio
+		$mediainfo_output = shell_exec('mediainfo --Output="Audio;%SamplingRate%\n%Channels%" ' . escapeshellarg($filepath) . ' 2>&1');
+		$mediainfo_output_split = preg_split('/\n/', $mediainfo_output);
+		$sample_rate = $mediainfo_output_split[0];
+		$channel_count = $mediainfo_output_split[1];
+		if($sample_rate > 48000){
+			$quality_params = $quality_params . " -ar 48000 ";
+		}
+		if($channel_count > 2){
+			$quality_params = $quality_params . " -ac 2 ";
+		}
+
+		// encode
 		$lockfile = $outfile . '.compressing';
 
 		if(!file_exists($outfile)){
@@ -78,6 +92,7 @@ if($stmt->fetch()){
 				pclose(popen('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . ' &', 'r'));
 			}
 		}else if(!isset($_GET["prepare"])){
+			// encoding started in another request. block until encoding done
 			while(file_exists($lockfile)){
 				sleep(1);
 			}
