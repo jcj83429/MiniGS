@@ -89,7 +89,7 @@ if($stmt->fetch()){
 			if(!isset($_GET["prepare"])){
 				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
 			}else{
-				pclose(popen('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . ' &', 'r'));
+				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
 			}
 		}else if(!isset($_GET["prepare"])){
 			// encoding started in another request. block until encoding done
