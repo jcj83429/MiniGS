@@ -71,25 +71,16 @@ if($stmt->fetch()){
 		}
 
 		// no high res or surround audio
-		$mediainfo_output = shell_exec('mediainfo --Output="Audio;%SamplingRate%\n%Channels%" ' . escapeshellarg($filepath) . ' 2>&1');
-		$mediainfo_output_split = preg_split('/\n/', $mediainfo_output);
-		$sample_rate = $mediainfo_output_split[0];
-		$channel_count = $mediainfo_output_split[1];
-		if($sample_rate > 48000){
-			$quality_params = $quality_params . " -ar 48000 ";
-		}
-		if($channel_count > 2){
-			$quality_params = $quality_params . " -ac 2 ";
-		}
+		$static_params = ' -filter:a "aformat=sample_rates=48000|44100|32000|24000|22050|16000|11025|8000:channel_layouts=stereo|mono" ';
 
 		// encode
 		$lockfile = $outfile . '.compressing';
 
 		if(!file_exists($outfile)){
 			if(!isset($_GET["prepare"])){
-				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
+				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
 			}else{
-				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
+				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
 			}
 		}else if(!isset($_GET["prepare"])){
 			// encoding started in another request. block until encoding done
