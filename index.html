@@ -41,18 +41,21 @@
 	<body>
 		<div id="everything" style='position:absolute;top:0px;bottom:0px;left:0px;right:0px;'>
 			<div id="top" style='width:100%;'>
-				<div id="header" style='float:left;position:absolute;top:0px;width:400px;height:30px;background-color:#666666;'>
-					<div style='float:right;padding:5px;'>
+				<div id="header" style='float:left;position:absolute;top:0px;width:400px;height:50px;background-color:#666666;'>
+					<div style='float:right;padding:5px;'><br>
 						Audio Format:
 						<select id="audio-format" onchange="change_format();">
 							<option value="mp3">mp3</option>
 							<option value="ogg">ogg</option>
 							<option value="opus">opus</option>
+							<option value="mp3,flac">mp3/flac (auto)</option>
+							<option value="ogg,flac">ogg/flac (auto)</option>
+							<option value="opus,flac">opus/flac (auto)</option>
 						</select>
 					</div>
 					<div style='position:absolute;top:0px;left:0px;font-size:125%;color:#ff8800;'>Mini Grooveshark <sup>ALPHA</sup></div>
 				</div>
-				<div id="playlist-container" style='float:left;position:absolute;top:30px;bottom:50px;width:400px;overflow-y:auto;overflow-x:hidden;background-color:#888888;'>
+				<div id="playlist-container" style='float:left;position:absolute;top:50px;bottom:50px;width:400px;overflow-y:auto;overflow-x:hidden;background-color:#888888;'>
 					<ul id="playlist"></ul>
 				</div>
 				<div id="browse" style='position:absolute;left:420px;top:0px;bottom:50px;right:0px;overflow-y:auto;'>
