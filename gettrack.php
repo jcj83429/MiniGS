@@ -10,37 +10,47 @@ if(!isset($_GET["id"])){
 
 $format_info = [
 	"mp3" => [
-		"fmt_ext" => ".mp3",
 		"suffix" => ".320k.mp3",
 		"mime_type" => "audio/mpeg",
 		"quality_params" => " -b:a 320k -vn "
 	],
 	"ogg" => [
-		"fmt_ext" => ".ogg",
 		"suffix" => ".q8.ogg",
 		"mime_type" => "audio/ogg",
 		"quality_params" => " -aq 8 -vn "
 	],
 	"opus" => [
-		"fmt_ext" => ".ogg",
 		"suffix" => ".256k.opus",
 		"mime_type" => "audio/ogg",
 		"quality_params" => " -b:a 256k -vn "
+	],
+	"flac" => [
+		"suffix" => ".flac",
+		"mime_type" => "audio/flac",
+		"quality_params" => " -vn "
 	]
 ];
+
+// DTS is not always lossless, but it's higher quality than typical lossy
+$lossless_formats = ["flac", "ape", "alac", "wv", "wav", "dts"];
 
 if(isset($_GET["format"])){
 	switch($_GET["format"]){
 		case "mp3":
 		case "ogg":
 		case "opus":
-			$format = $_GET["format"];
+			$lossy_format = $lossless_format = $_GET["format"];
+			break;
+		case "mp3,flac":
+		case "ogg,flac":
+		case "opus,flac":
+			list($lossy_format, $lossless_format) = explode(",", $_GET["format"]);
 			break;
 		default:
 			die("invalid");
 	}
 }else{
-	$format = "mp3";
+	$lossy_format = $lossless_format = "mp3";
 }
 
 
@@ -62,7 +72,16 @@ $stmt->execute();
 $stmt->bind_result($filepath,$start,$end);
 
 if($stmt->fetch()){
-	if(!str_ends_with($filepath, $format_info[$format]["fmt_ext"])){
+	$src_file_ext = pathinfo($filepath, PATHINFO_EXTENSION);
+	if(in_array($src_file_ext, $lossless_formats)){
+		// source file is lossless. use target format for lossless source.
+		$format = $lossless_format;
+	}else{
+		$format = $lossy_format;
+	}
+	if($format != $src_file_ext || $start != null || $end != null){
+		// transcode needed
+
 		// handle cue sheet image cutting
 		$cut_params = '';
 		if($start !== null){
