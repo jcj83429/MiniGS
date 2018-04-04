@@ -7,7 +7,7 @@ A tiny grooveshark-style music site for personal use. You need to load your own 
 - Basic search
 - Automatic file reencoding
 - Read tracks in cue sheets
-- It's tiny - currently less than 600 lines of code and zero graphics
+- It's tiny - small amount of code and zero graphics
 
 # Requirements
 - LAMP server
