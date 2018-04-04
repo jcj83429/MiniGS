@@ -8,34 +8,39 @@ if(!isset($_GET["id"])){
 	exit;
 }
 
+$format_info = [
+	"mp3" => [
+		"fmt_ext" => ".mp3",
+		"suffix" => ".320k.mp3",
+		"mime_type" => "audio/mpeg",
+		"quality_params" => " -b:a 320k -vn "
+	],
+	"ogg" => [
+		"fmt_ext" => ".ogg",
+		"suffix" => ".q8.ogg",
+		"mime_type" => "audio/ogg",
+		"quality_params" => " -aq 8 -vn "
+	],
+	"opus" => [
+		"fmt_ext" => ".ogg",
+		"suffix" => ".256k.opus",
+		"mime_type" => "audio/ogg",
+		"quality_params" => " -b:a 256k -vn "
+	]
+];
+
 if(isset($_GET["format"])){
 	switch($_GET["format"]){
 		case "mp3":
-			$fmt_ext = '.mp3';
-			$suffix = ".320k.mp3";
-			$mime_type = "audio/mpeg";
-			$quality_params = " -b:a 320k -vn ";
-			break;
 		case "ogg":
-			$fmt_ext = '.ogg';
-			$suffix = ".q8.ogg";
-			$mime_type = "audio/ogg";
-			$quality_params = " -aq 8 -vn ";
-			break;
 		case "opus":
-			$fmt_ext = '.opus';
-			$suffix = ".256k.opus";
-			$mime_type = "audio/ogg";
-			$quality_params = " -b:a 256k -vn ";
+			$format = $_GET["format"];
 			break;
 		default:
 			die("invalid");
 	}
 }else{
-	$fmt_ext = '.mp3';
-	$suffix = ".320k.mp3";
-	$mime_type = "audio/mpeg";
-	$quality_params = " -b:a 320k ";
+	$format = "mp3";
 }
 
 
@@ -57,14 +62,14 @@ $stmt->execute();
 $stmt->bind_result($filepath,$start,$end);
 
 if($stmt->fetch()){
-	if(!str_ends_with($filepath, $fmt_ext)){
+	if(!str_ends_with($filepath, $format_info[$format]["fmt_ext"])){
 		// handle cue sheet image cutting
 		$cut_params = '';
 		if($start !== null){
-			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . '.ss' . intval($start) . $suffix;
+			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . '.ss' . intval($start) . $format_info[$format]["suffix"];
 			$cut_params = ' -ss ' . $start;
 		}else{
-			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . $suffix;
+			$outfile = COMPRESSED_CACHE . substr(md5(dirname($filepath)), 0, 8) . '_' . basename($filepath) . $format_info[$format]["suffix"];
 		}
 		if($end !== null){
 			$cut_params = $cut_params . ' -to ' . $end;
@@ -78,9 +83,9 @@ if($stmt->fetch()){
 
 		if(!file_exists($outfile)){
 			if(!isset($_GET["prepare"])){
-				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
+				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $format_info[$format]["quality_params"] . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
 			}else{
-				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $quality_params . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
+				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $format_info[$format]["quality_params"] . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
 			}
 		}else if(!isset($_GET["prepare"])){
 			// encoding started in another request. block until encoding done
@@ -105,7 +110,7 @@ if($stmt->fetch()){
 			header("Content-Range: bytes $range_start-$range_end/$filesize");
 		}
 
-		header('Content-type: ' . $mime_type);
+		header('Content-type: ' . $format_info[$format]["mime_type"]);
 		header('Content-length: ' . $range_length);
 		header('Content-disposition: inline; filename="' . str_replace('"', '\\"', str_replace('\\', '\\\\', basename($filepath))) . '"');
 		header('Accept-Ranges: bytes');
