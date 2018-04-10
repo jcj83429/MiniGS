@@ -168,7 +168,7 @@
 			enqueue = function(e) {
 				var mobile_dragger_html = '<div class="touch-punch-enable" style="float:left;width:50px;height:100%;line-height:100%;font-size:200%;text-align:center;">&equiv;</div>'
 				var entry = e.parentNode.parentNode
-				var new_playlist_item = $('<li class="ui-sortable-handle" track_id="' + entry.attributes["id"].value + '"><div style="float:right;font-size:150%;"><a href="#" onclick="dequeue(this, event);">X</a></div>' + ($.support.touch ? mobile_dragger_html : "") + '<div style="height:40px;overflow:hidden;">' + entry.attributes["artist"].value + '<br>' + entry.attributes["title"].value + '</div></li>')
+				var new_playlist_item = $('<li class="ui-sortable-handle" track_id="' + entry.attributes["id"].value + '"><div style="float:right;font-size:150%;"><a href="#" onclick="dequeue(this, event);">X</a></div>' + ($.support.touch ? mobile_dragger_html : "") + '<div style="height:40px;overflow:hidden;white-space:nowrap;">' + entry.attributes["artist"].value + '<br>' + entry.attributes["title"].value + '</div></li>')
 				new_playlist_item.on("click", function() {
 					playtrack(this);
 				})
