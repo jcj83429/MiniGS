@@ -79,9 +79,27 @@ if($stmt->fetch()){
 	}else{
 		$format = $lossy_format;
 	}
-	if($format != $src_file_ext || $start != null || $end != null){
-		// transcode needed
 
+	// determine if transcoding is needed
+	$transcode_needed = false;
+	if(strcasecmp($format, $src_file_ext) != 0){
+		// transcode needed because format conversion is needed
+		$transcode_needed = true;
+	}
+	if($start != null || $end != null){
+		// transcode needed because the track is a range of a whole-disc image
+		$transcode_needed = true;
+	}
+	if(strcasecmp($src_file_ext, "flac") == 0){
+		// check if FLAC file is compliant (doesn't have any extra tags like ID3 in front)
+		$flac_file = fopen($filepath, "r");
+		$flac_header = fread($flac_file, 4);
+		if($flac_header != "fLaC"){
+			$transcode_needed = true;
+		}
+	}
+
+	if($transcode_needed){
 		// handle cue sheet image cutting
 		$cut_params = '';
 		if($start !== null){
