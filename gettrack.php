@@ -72,6 +72,12 @@ $stmt->execute();
 $stmt->bind_result($filepath,$start,$end);
 
 if($stmt->fetch()){
+	if(!file_exists($filepath)){
+		http_response_code(404);
+		goto finish;
+	}
+
+
 	$src_file_ext = pathinfo($filepath, PATHINFO_EXTENSION);
 	if(in_array($src_file_ext, $lossless_formats)){
 		// source file is lossless. use target format for lossless source.
@@ -164,8 +170,12 @@ if($stmt->fetch()){
 	}else{
 		header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', time() + (1 * 24 * 60 * 60))); //cache for 1 days
 	}
+}else{
+	http_response_code(404);
+	goto finish;
 }
 
+finish:
 $dbcon->close();
 
 ?>
