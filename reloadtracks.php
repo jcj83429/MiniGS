@@ -83,12 +83,14 @@ function parse_cue($insert_stmt, $chkdupcue_stmt, $file){
 			$trackForCurrentWav = 0;
 		}else if(preg_match('/INDEX 01.*(\d\d):(\d\d):(\d\d)/i', $line, $matches)){
 			$indexTime = intval($matches[1])*60 + intval($matches[2]) + intval($matches[3])/75;
-			$currentTrackInfo['start'] = $indexTime;
 			$currentTrackInfo['FILE'] = $lastFile;
 			if($trackForCurrentWav > 1){
 				$lastTrackInfo['end'] = $indexTime;
+				$currentTrackInfo['start'] = $indexTime;
 			}else{
 				$lastTrackInfo['end'] = null;
+				// don't skip pregap of first track in file
+				$currentTrackInfo['start'] = null;
 			}
 			if(!$firstTrack){
 				$cueInfo[] = $lastTrackInfo;
