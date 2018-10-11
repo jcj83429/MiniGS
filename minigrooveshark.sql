@@ -1,13 +1,15 @@
 -- phpMyAdmin SQL Dump
--- version 4.4.14
--- http://www.phpmyadmin.net
+-- version 4.8.3
+-- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 08, 2015 at 01:10 AM
--- Server version: 5.5.44-MariaDB-1ubuntu0.14.04.1
--- PHP Version: 5.5.9-1ubuntu4.11
+-- Generation Time: Oct 11, 2018 at 09:52 AM
+-- Server version: 10.1.36-MariaDB
+-- PHP Version: 7.2.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -26,13 +28,13 @@ SET time_zone = "+00:00";
 -- Table structure for table `tracks`
 --
 
-CREATE TABLE IF NOT EXISTS `tracks` (
-  `id` int(10) unsigned NOT NULL,
+CREATE TABLE `tracks` (
+  `id` int(10) UNSIGNED NOT NULL,
   `artist` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `album` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `trackno` int(11) NOT NULL DEFAULT '-1',
   `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `filepath` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `filepath` varchar(8192) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `start` float DEFAULT NULL,
   `end` float DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -46,7 +48,8 @@ CREATE TABLE IF NOT EXISTS `tracks` (
 --
 ALTER TABLE `tracks`
   ADD PRIMARY KEY (`id`),
-  ADD FULLTEXT KEY `ft_all` (`artist`,`album`,`title`);
+  ADD KEY `filepath` (`filepath`(333));
+ALTER TABLE `tracks` ADD FULLTEXT KEY `ft_all` (`artist`,`album`,`title`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -56,7 +59,9 @@ ALTER TABLE `tracks`
 -- AUTO_INCREMENT for table `tracks`
 --
 ALTER TABLE `tracks`
-  MODIFY `id` int(10) unsigned NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+COMMIT;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
