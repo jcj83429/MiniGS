@@ -35,8 +35,8 @@ function read_file_info($file){
 	return $mediainfo_array;
 }
 
-function insert_track_row($insert_stmt, $artist, $album, $trackno, $title, $filepath, $start, $end){
-	$insert_stmt->bind_param('ssissdd', $artist, $album, $trackno, $title, $filepath, $start, $end);
+function insert_track_row($insert_stmt, $artist, $album, $trackno, $title, $filepath, $start, $end, $preemphasis){
+	$insert_stmt->bind_param('ssissddi', $artist, $album, $trackno, $title, $filepath, $start, $end, intval($preemphasis));
 	$result = $insert_stmt->execute();
 	if(!$result){
 		echo "row insert failed" . $filepath . " track " . $trackno . "<br>";
@@ -44,7 +44,8 @@ function insert_track_row($insert_stmt, $artist, $album, $trackno, $title, $file
 }
 
 function insert_track_row_from_file_info($insert_stmt, $file_info){ //for single track
-	insert_track_row($insert_stmt, $file_info['artist'], $file_info['album'], $file_info['trackno'], $file_info['title'], $file_info['filepath'], null, null);
+	// FIXME: preemphasis detection for single file
+	insert_track_row($insert_stmt, $file_info['artist'], $file_info['album'], $file_info['trackno'], $file_info['title'], $file_info['filepath'], null, null, false);
 }
 
 
@@ -53,7 +54,7 @@ function parse_cue($insert_stmt, $chkdupcue_stmt, $file){
 	$dir = dirname($file);
 	$cueInfo = array();
 	$touchedFiles = array();
-	$currentTrackInfo = array();
+	$currentTrackInfo = array('PRE' => false);
 	$lastTrackInfo = null;
 	$albumPerformer = '';
 	$albumTitle = preg_replace('/\\.cue/', '', basename($file)); //default to cuesheet name
@@ -107,10 +108,16 @@ function parse_cue($insert_stmt, $chkdupcue_stmt, $file){
 				}
 			}
 			$lastTrackInfo = $currentTrackInfo;
-			$currentTrackInfo = array();
+			$currentTrackInfo = array('PRE' => false);
 			$trackForCurrentWav += 1;
 			$currentTrackInfo['TRACK'] = $matches[1];
 			$tracksStarted = true;
+		}else if(preg_match('/FLAGS (\w+)+/i', $line, $matches)){
+			foreach($matches as &$flag){
+				if(strcasecmp($flag, 'PRE') == 0){
+					$currentTrackInfo['PRE'] = true;
+				}
+			}
 		}else{
 			//echo $line.' UNKNOWN<br>';
 		}
@@ -144,7 +151,7 @@ function parse_cue($insert_stmt, $chkdupcue_stmt, $file){
 				//echo 'dup ' . $file . ' ' . $trackInfo['TRACK'] . "<br>";
 			}else{
 			
-				insert_track_row($insert_stmt, $trackInfo['PERFORMER'], $albumTitle, $trackInfo['TRACK'], $trackInfo['TITLE'], $trackInfo['FILE'], $trackInfo['start'], $trackInfo['end']);
+				insert_track_row($insert_stmt, $trackInfo['PERFORMER'], $albumTitle, $trackInfo['TRACK'], $trackInfo['TITLE'], $trackInfo['FILE'], $trackInfo['start'], $trackInfo['end'], $trackInfo['PRE']);
 				echo 'new ' . $file . ' ' . $trackInfo['TRACK'] . "<br>";
 			}
 		}else{
@@ -218,7 +225,7 @@ if($dbcon->connect_errno) die("db connection failed: " . $dbcon->connect_error);
 
 $dbcon->set_charset("utf8");
 
-if (!($insert_stmt = $dbcon->prepare("INSERT INTO tracks(artist, album, trackno, title, filepath, start, end) VALUES (?, ?, ?, ?, ?, ?, ?)"))) {
+if (!($insert_stmt = $dbcon->prepare("INSERT INTO tracks(artist, album, trackno, title, filepath, start, end, preemphasis) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"))) {
 	die("Prepare failed: (" . $dbcon->errno . ") " . $dbcon->error);
 }
 if (!($chkdup_stmt = $dbcon->prepare("SELECT `id`, `artist`, `album`, `trackno`, `title` FROM tracks WHERE filepath = (?)"))) {

@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 11, 2018 at 09:52 AM
+-- Generation Time: Oct 23, 2018 at 07:49 AM
 -- Server version: 10.1.36-MariaDB
--- PHP Version: 7.2.10
+-- PHP Version: 7.2.11
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -36,7 +36,8 @@ CREATE TABLE `tracks` (
   `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `filepath` varchar(8192) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `start` float DEFAULT NULL,
-  `end` float DEFAULT NULL
+  `end` float DEFAULT NULL,
+  `preemphasis` tinyint(1) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
