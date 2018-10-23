@@ -12,22 +12,22 @@ $format_info = [
 	"mp3" => [
 		"suffix" => ".320k.mp3",
 		"mime_type" => "audio/mpeg",
-		"quality_params" => " -b:a 320k -vn "
+		"quality_params" => " -b:a 320k -vn"
 	],
 	"ogg" => [
 		"suffix" => ".q8.ogg",
 		"mime_type" => "audio/ogg",
-		"quality_params" => " -aq 8 -vn "
+		"quality_params" => " -aq 8 -vn"
 	],
 	"opus" => [
 		"suffix" => ".256k.opus",
 		"mime_type" => "audio/ogg",
-		"quality_params" => " -b:a 256k -vn "
+		"quality_params" => " -b:a 256k -vn"
 	],
 	"flac" => [
 		"suffix" => ".flac",
 		"mime_type" => "audio/flac",
-		"quality_params" => " -vn "
+		"quality_params" => " -vn"
 	]
 ];
 
@@ -63,13 +63,13 @@ if($dbcon->connect_errno) die("db connection failed: " . $dbcon->connect_error);
 
 $dbcon->set_charset("utf8");
 
-if (!($stmt = $dbcon->prepare("SELECT filepath,start,end FROM tracks WHERE id=(?)"))) {
+if (!($stmt = $dbcon->prepare("SELECT filepath,start,end,preemphasis FROM tracks WHERE id=(?)"))) {
 	die("Prepare failed: (" . $dbcon->errno . ") " . $dbcon->error);
 }
 
 $stmt->bind_param('i', $_GET["id"]);
 $stmt->execute();
-$stmt->bind_result($filepath,$start,$end);
+$stmt->bind_result($filepath,$start,$end,$preemphasis);
 
 if($stmt->fetch()){
 	if(!file_exists($filepath)){
@@ -96,6 +96,10 @@ if($stmt->fetch()){
 		// transcode needed because the track is a range of a whole-disc image
 		$transcode_needed = true;
 	}
+	if($preemphasis){
+		// transcode needed because source is preemphasized
+		$transcode_needed = true;
+	}
 	if(strcasecmp($src_file_ext, "flac") == 0){
 		// check if FLAC file is compliant (doesn't have any extra tags like ID3 in front)
 		$flac_file = fopen($filepath, "r");
@@ -119,16 +123,23 @@ if($stmt->fetch()){
 		}
 
 		// no high res or surround audio
-		$static_params = ' -filter:a "aformat=sample_rates=48000|44100|32000|24000|22050|16000|11025|8000:channel_layouts=stereo|mono" ';
+		$effect_params = ' -filter:a "aformat=sample_rates=48000|44100|32000|24000|22050|16000|11025|8000:channel_layouts=stereo|mono"';
+
+		if($preemphasis){
+			// deemphasis
+			$effect_params = $effect_params . ',"aemphasis=mode=reproduction:type=cd"';
+		}
+
+		$ffmpeg_cmd = 'ffmpeg -i ' . escapeshellarg($filepath) . $effect_params . $cut_params . $format_info[$format]["quality_params"] . ' ' . escapeshellarg($outfile);
 
 		// encode
 		$lockfile = $outfile . '.compressing';
 
 		if(!file_exists($outfile)){
 			if(!isset($_GET["prepare"])){
-				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $format_info[$format]["quality_params"] . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile));
+				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ' . $ffmpeg_cmd . ' ; rm ' . escapeshellarg($lockfile));
 			}else{
-				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ffmpeg -i ' . escapeshellarg($filepath) . $static_params . $cut_params . $format_info[$format]["quality_params"] . escapeshellarg($outfile) . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
+				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ' . $ffmpeg_cmd . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
 			}
 		}else if(!isset($_GET["prepare"])){
 			// encoding started in another request. block until encoding done
