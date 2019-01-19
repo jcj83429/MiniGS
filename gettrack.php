@@ -24,6 +24,12 @@ $format_info = [
 		"mime_type" => "audio/ogg",
 		"quality_params" => " -b:a 256k -vn"
 	],
+	// because opus_low is not a valid file extension, when opus_low is selected, transcoding will always take place
+	"opus_low" => [
+		"suffix" => ".128k.opus",
+		"mime_type" => "audio/ogg",
+		"quality_params" => " -b:a 128k -vn"
+	],
 	"flac" => [
 		"suffix" => ".flac",
 		"mime_type" => "audio/flac",
@@ -39,6 +45,7 @@ if(isset($_GET["format"])){
 		case "mp3":
 		case "ogg":
 		case "opus":
+		case "opus_low":
 			$lossy_format = $lossless_format = $_GET["format"];
 			break;
 		case "mp3,flac":
@@ -52,7 +59,6 @@ if(isset($_GET["format"])){
 }else{
 	$lossy_format = $lossless_format = "mp3";
 }
-
 
 if (!file_exists(COMPRESSED_CACHE)) {
     mkdir(COMPRESSED_CACHE, 0777, true);
