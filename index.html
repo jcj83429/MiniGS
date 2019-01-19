@@ -23,6 +23,12 @@
 			background-color: #444444;
 			position:relative;
 			}
+			#sortable-dummy{
+			margin: 0px 15px 5px 5px;
+			padding: 5px;
+			height: 80px;
+			position:relative;
+			}
 			#playlist a{
 			color: #ffffff;
 			}
@@ -57,7 +63,9 @@
 					<div style='position:absolute;top:0px;left:0px;font-size:125%;color:#ff8800;'>Mini Grooveshark <sup>ALPHA</sup></div>
 				</div>
 				<div id="playlist-container" style='float:left;position:absolute;top:50px;bottom:50px;width:400px;overflow-y:auto;overflow-x:hidden;background-color:#888888;'>
-					<ul id="playlist"></ul>
+					<ul id="playlist">
+						<div id="sortable-dummy"/>
+					</ul>
 				</div>
 				<div id="browse" style='position:absolute;left:420px;top:0px;bottom:50px;right:0px;overflow-y:auto;'>
 					<input type="text" id="searchbox" onkeydown="if (event.keyCode == 13) search();" placeholder="artist, album, title (empty = list all tracks)" size=40>
@@ -98,6 +106,7 @@
 		<script type="text/javascript">
 			var player = document.getElementById("player")
 			var playlist = document.getElementById("playlist")
+			var playlist_dummy = document.getElementById("sortable-dummy")
 			var current_track = $(".playing")
 			var next_id = null //used to determine of the next track has changed. if it has, then make another prepare request
 			var format = "mp3"
@@ -173,7 +182,7 @@
 				new_playlist_item.on("click", function() {
 					playtrack(this);
 				})
-				new_playlist_item.appendTo(playlist)
+				new_playlist_item.insertBefore(playlist_dummy)
 				prepareNextTrack()
 			}
 			
@@ -181,7 +190,7 @@
 				event.stopPropagation()
 				to_remove = e.parentNode.parentNode
 				if(to_remove == current_track.get()[0]){
-					if(!current_track.is(':last-child')){
+					if(!current_track.is(':nth-last-child(2)')){
 						playtrack(current_track.next())
 					}else{
 						stop()
@@ -209,14 +218,15 @@
 							prepareNextTrack();
 						}, 10)
 					},
-					axis: "y"
+				axis: "y",
+				items: "> li",
 				}).disableSelection();
 			});
 			
 			$( "#playlist li" ).on( "click", function(){playtrack(this);});
 			
 			player.addEventListener("ended", function(event){
-				if(!current_track.is(':last-child')){
+				if(!current_track.is(':nth-last-child(2)')){
 					playtrack(current_track.next())
 				}else{
 					stop()
