@@ -16,8 +16,9 @@ A tiny grooveshark-style music site for personal use. You need to load your own 
 
 # Setup
 - Install requirements. (checkout https://trac.ffmpeg.org/wiki/CompilationGuide)
-- Add the following lines to /etc/mysql/my.cnf . Otherwise search won't work right.
+- Add the following lines to /etc/my.cnf.d/server.cnf under the [mysqld] section. Otherwise search won't work right.
 ```
+innodb_ft_min_token_size=2
 ft_min_word_len=2
 ft_stopword_file=''
 ```
