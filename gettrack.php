@@ -157,6 +157,7 @@ if($stmt->fetch()){
 	}
 
 	if(!isset($_GET["prepare"])){
+		clearstatcache(true, $filepath);
 		$filesize = filesize($filepath);
 		$range_start = 0;
 		$range_end = $filesize - 1;
