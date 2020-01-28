@@ -141,23 +141,33 @@ if($stmt->fetch()){
 		// encode
 		$lockfile = $outfile . '.compressing';
 
+		clearstatcache();
 		if(!file_exists($outfile)){
-			if(!isset($_GET["prepare"])){
-				shell_exec('touch ' . escapeshellarg($lockfile) . ' && ' . $ffmpeg_cmd . ' ; rm ' . escapeshellarg($lockfile));
+			$lockfilefp = fopen($lockfile, 'x');
+			if($lockfilefp){
+				shell_exec($ffmpeg_cmd);
+				fclose($lockfilefp);
+				unlink($lockfile);
 			}else{
-				pclose(popen('if true; then ' . 'touch ' . escapeshellarg($lockfile) . ' && ' . $ffmpeg_cmd . ' ; rm ' . escapeshellarg($lockfile) . '; fi &', 'r'));
+				clearstatcache();
+				while(file_exists($lockfile)){
+					sleep(1);
+					clearstatcache();
+				}
 			}
 		}else if(!isset($_GET["prepare"])){
 			// encoding started in another request. block until encoding done
+			clearstatcache();
 			while(file_exists($lockfile)){
 				sleep(1);
+				clearstatcache();
 			}
 		}
 		$filepath = $outfile;
 	}
 
 	if(!isset($_GET["prepare"])){
-		clearstatcache(true, $filepath);
+		clearstatcache();
 		$filesize = filesize($filepath);
 		$range_start = 0;
 		$range_end = $filesize - 1;
