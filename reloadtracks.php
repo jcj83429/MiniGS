@@ -36,7 +36,8 @@ function read_file_info($file){
 }
 
 function insert_track_row($insert_stmt, $artist, $album, $trackno, $title, $filepath, $start, $end, $preemphasis){
-	$insert_stmt->bind_param('ssissddi', $artist, $album, $trackno, $title, $filepath, $start, $end, intval($preemphasis));
+    $preemphasis_int = intval($preemphasis);
+	$insert_stmt->bind_param('ssissddi', $artist, $album, $trackno, $title, $filepath, $start, $end, $preemphasis_int);
 	$result = $insert_stmt->execute();
 	if(!$result){
 		echo "row insert failed" . $filepath . " track " . $trackno . "<br>";
