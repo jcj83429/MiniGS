@@ -5,7 +5,7 @@ include 'common.php';
 function file_is_supported_format($file){
 	$supported_formats = array('.mp3', '.m4a', '.ogg', '.opus', '.flac', '.ape', '.wv', '.wav', '.dts');
 	foreach($supported_formats as $ext){
-		if(str_ends_with($file, $ext)){
+		if(str_ends_with_ci($file, $ext)){
 			return true;
 		}
 	}
@@ -36,7 +36,7 @@ function read_file_info($file){
 }
 
 function insert_track_row($insert_stmt, $artist, $album, $trackno, $title, $filepath, $start, $end, $preemphasis){
-    $preemphasis_int = intval($preemphasis);
+	$preemphasis_int = intval($preemphasis);
 	$insert_stmt->bind_param('ssissddi', $artist, $album, $trackno, $title, $filepath, $start, $end, $preemphasis_int);
 	$result = $insert_stmt->execute();
 	if(!$result){
@@ -177,7 +177,7 @@ function find_and_index_files($insert_stmt, $chkdup_stmt, $chkdupcue_stmt, $dir)
 		}
 		$cue_touched_files = array();
 		foreach($files as $file){ //do cue sheets first
-			if(str_ends_with($file, '.cue')){
+			if(str_ends_with_ci($file, '.cue')){
 				$new_cue_touched_files = parse_cue($insert_stmt, $chkdupcue_stmt, $dir.$file);
 				foreach($new_cue_touched_files as $touched_file){
 					$cue_touched_files[] = $touched_file;
