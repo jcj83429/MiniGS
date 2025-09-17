@@ -131,6 +131,34 @@
 				prepareNextTrack()
 			}
 
+			nexttrack = function() {
+				if (current_track.length == 0) {
+					if (playlist.children.length > 1) {
+						playtrack(playlist.children[0])
+					}
+					return;
+				}
+
+				if(!current_track.is(':nth-last-child(2)')){
+					playtrack(current_track.next())
+				}else{
+					stop()
+				}
+			}
+
+			prevtrack = function() {
+				if (current_track.length == 0) {
+					if (playlist.children.length > 1) {
+						playtrack(playlist.children[0])
+					}
+					return;
+				}
+
+				if(!current_track.is(':nth-child(1)')){
+					playtrack(current_track.prev())
+				}
+			}
+
 			stop = function() {
 				current_track.removeClass("playing")
 				current_track = $(".playing")
@@ -236,18 +264,15 @@
 			
 			$( "#playlist li" ).on( "click", function(){playtrack(this);});
 			
-			player.addEventListener("ended", function(event){
-				if(!current_track.is(':nth-last-child(2)')){
-					playtrack(current_track.next())
-				}else{
-					stop()
-				}
-			});
+			player.addEventListener("ended", nexttrack);
 			
 			if(localStorage.getItem("format")){
 				format = localStorage.getItem("format")
 			}
 			document.getElementById("audio-format").value = format
+
+			navigator.mediaSession.setActionHandler("nexttrack", nexttrack)
+			navigator.mediaSession.setActionHandler("previoustrack", prevtrack)
 		</script>
 	</body>
 </html>
