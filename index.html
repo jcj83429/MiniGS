@@ -129,6 +129,11 @@
 				player.play()
 				console.log("play " + $(track).attr("track_id"));
 				prepareNextTrack()
+				navigator.mediaSession.metadata = new MediaMetadata({
+					title: current_track.attr("title"),
+					artist: current_track.attr("artist"),
+					album: current_track.attr("album"),
+				});
 			}
 
 			nexttrack = function() {
@@ -163,6 +168,7 @@
 				current_track.removeClass("playing")
 				current_track = $(".playing")
 				player.src = "http://null"
+				navigator.mediaSession.metadata = new MediaMetadata()
 			}
 
 			search = function() {
@@ -212,7 +218,7 @@
 			enqueue = function(e) {
 				var mobile_dragger_html = '<div class="touch-punch-enable" style="float:left;width:50px;height:100%;line-height:100%;font-size:200%;text-align:center;">&equiv;</div>'
 				var entry = e.parentNode.parentNode
-				var new_playlist_item = $('<li class="ui-sortable-handle" track_id="' + entry.attributes["id"].value + '">' + 
+				var new_playlist_item = $('<li class="ui-sortable-handle" track_id="' + entry.attributes["id"].value + '" artist="' + entry.attributes["artist"].value + '" album="' + entry.attributes["album"].value + '" trackno="' + entry.attributes["trackno"].value + '" title="' + entry.attributes["title"].value + '">' + 
  				                          '<div style="float:right;font-size:150%;"><a href="#" onclick="dequeue(this, event);">X</a></div>' +  
 				                          ($.support.touch ? mobile_dragger_html : "") + 
 				                          '<div style="position:relative;z-index:1;height:40px;overflow:hidden;white-space:nowrap;">' + entry.attributes["artist"].value + '<br>' + entry.attributes["title"].value + '</div>' + 
